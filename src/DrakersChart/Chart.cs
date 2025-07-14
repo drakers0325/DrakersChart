@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DrakersChart.Axis;
 
 namespace DrakersChart;
 public sealed class Chart : UserControl
@@ -12,15 +13,24 @@ public sealed class Chart : UserControl
     private readonly CrosshairLayer crosshairLayer = new();
     private readonly SizeGripLayer gripLayer;
 
+    internal AxisXDataManger AxisXDataManager { get; } = new();
+    internal AxisXDrawRegionManager AxisXDrawRegionManager { get; }
+
     public ChartPane[] ChartPanes => this.chartList.ToArray();
 
     public Chart()
     {
         this.gripLayer = new SizeGripLayer(this, this.crosshairLayer);
+        this.AxisXDrawRegionManager = new AxisXDrawRegionManager(this, this.AxisXDataManager);
         AddChild(this.mainGrid);
         this.mainGrid.Children.Add(this.canvas);
         this.mainGrid.Children.Add(this.crosshairLayer);
         this.mainGrid.Children.Add(this.gripLayer);
+    }
+
+    public void SetDisplayRange(Int32 startIndex, Int32 count)
+    {
+        this.AxisXDrawRegionManager.SetDisplayRange(startIndex, count);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -31,6 +41,8 @@ public sealed class Chart : UserControl
         }
 
         SetChartPaneHeight(availableSize.Height);
+        this.AxisXDrawRegionManager.Width = availableSize.Width;
+        this.AxisXDrawRegionManager.Height = availableSize.Height;
         this.gripLayer.UpdateGripArea();
         return base.MeasureOverride(availableSize);
     }
@@ -118,7 +130,7 @@ public sealed class Chart : UserControl
 
     public ChartPane AddChart()
     {
-        var newChart = new ChartPane();
+        var newChart = new ChartPane(this);
 
         if (this.chartList.Count == 0)
         {

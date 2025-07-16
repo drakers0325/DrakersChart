@@ -129,7 +129,7 @@ internal class SizeGripLayer : Canvas
 
             info.TopPane.Height = topHeight;
             info.BottomPane.Height = bottomHeight;
-            SetTop(info.BottomPane, y);
+            SetTop(info.BottomPane, y - 1);
             UpdateGripArea();
             this.chart.UpdateChartPaneRatio();
         }

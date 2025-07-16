@@ -1,25 +1,71 @@
 ﻿namespace DrakersChart.Axis;
 public class AxisXDrawRegionManager
 {
+    private readonly EventSet eventSet = new();
     private readonly Chart chart;
     private readonly AxisXDataManger dataManager;
     private readonly List<AxisXDrawRegion> drawRegionList = [];
-    
-    public Int32 StartIndex { get; private set; }
-    public Int32 Count { get; private set; }
 
-    private Double height;
+    private static readonly EventKey regionUpdatedKey = new();
 
-    public Double Height
+    public event EventHandler<EventArgs> DrawRegionsUpdated
     {
-        get => this.height;
+        add => this.eventSet.Add(regionUpdatedKey, value);
+        remove => this.eventSet.Remove(regionUpdatedKey, value);
+    }
+
+    public Int32 StartIndex { get; private set; }
+    public Int32 DisplayCount { get; private set; }
+    public Int32 DrawRegionCount => this.drawRegionList.Count;
+
+    private Int32 leftMargin = 1;
+
+    public Int32 LeftMargin
+    {
+        get => this.leftMargin;
         set
         {
-            this.height = value;
+            this.leftMargin = value;
             SetDrawRegion();
         }
     }
-    
+
+    private Int32 rightMargin = 20;
+
+    public Int32 RightMargin
+    {
+        get => this.rightMargin;
+        set
+        {
+            this.rightMargin = value;
+            SetDrawRegion();
+        }
+    }
+
+    private Int32 leftAxisYGuideWidth = 0;
+
+    public Int32 LeftAxisYGuideWidth
+    {
+        get => this.leftAxisYGuideWidth;
+        set
+        {
+            this.leftAxisYGuideWidth = value;
+            SetDrawRegion();
+        }
+    }
+
+    private Int32 rightAxisYGuideWidth = 0;
+
+    public Int32 RightAxisYGuideWidth
+    {
+        get => this.rightAxisYGuideWidth;
+        set
+        {
+            this.rightAxisYGuideWidth = value;
+            SetDrawRegion();
+        }
+    }
+
     private Double width;
 
     public Double Width
@@ -38,36 +84,50 @@ public class AxisXDrawRegionManager
     {
         this.chart = chart;
         this.dataManager = dataManager;
-        this.dataManager.DataUpdated += (_, _) =>
-        {
-            SetDrawRegion();
-        };
+        this.dataManager.DataUpdated += (_, _) => { SetDrawRegion(); };
     }
 
     public void SetDisplayRange(Int32 startIndex, Int32 count)
     {
         this.StartIndex = startIndex;
         Int32 diff = this.dataManager.DataCount - this.StartIndex;
-        this.Count = count > diff ? diff : count;
+        this.DisplayCount = count > diff ? diff : count;
         SetDrawRegion();
+    }
+
+    public AxisXDrawRegion? GetDrawRegion(Double x)
+    {
+        foreach (var eachRegion in this.drawRegionList)
+        {
+            if (eachRegion.Left <= x && x < eachRegion.Left + eachRegion.Width)
+            {
+                return eachRegion;
+            }
+        }
+
+        return null;
     }
 
     private void SetDrawRegion()
     {
-        if (this.width == 0 || this.height == 0 || this.Count == 0)
+        Double actualWidth = this.width - this.leftMargin - this.rightMargin - this.leftAxisYGuideWidth - this.rightAxisYGuideWidth;
+        this.drawRegionList.Clear();
+        if (actualWidth <= 0 || this.DisplayCount == 0)
         {
+            this.eventSet.Raise(regionUpdatedKey, this, EventArgs.Empty);
             return;
         }
-        this.drawRegionList.Clear();
 
-        Single eachWidth = (Single)(this.width / this.Count);
-        Single left = 0;
-        Int32 end = this.StartIndex + this.Count;
+        Single eachWidth = (Single)(actualWidth / this.DisplayCount);
+        Single left = this.leftMargin + this.leftAxisYGuideWidth;
+        Int32 end = this.StartIndex + this.DisplayCount;
         var axisXData = this.dataManager.Data;
         for (Int32 index = this.StartIndex; index < end; index++)
         {
             this.drawRegionList.Add(new AxisXDrawRegion(axisXData[index].Value, left, left + eachWidth));
             left += eachWidth;
         }
+
+        this.eventSet.Raise(regionUpdatedKey, this, EventArgs.Empty);
     }
 }

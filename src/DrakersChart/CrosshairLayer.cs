@@ -9,8 +9,10 @@ internal class CrosshairLayer : Canvas
     private Boolean visible;
     private Boolean allowCrosshair = true;
 
-    public Brush LineBrush { get; set; } = Brushes.Gray;
+    public Brush LineBrush { get; set; } = Brushes.Red;
     public Double LineThickness { get; set; } = 1;
+    
+    public Int32 BottomMargin { get; set; } = 0;
 
     public Boolean AllowCrosshair
     {
@@ -65,7 +67,7 @@ internal class CrosshairLayer : Canvas
             [this.pos.X + 0.5],
             [this.pos.Y + 0.5]));
 
-        dc.DrawLine(pen, new Point(this.pos.X, 0), new Point(this.pos.X, this.ActualHeight));
+        dc.DrawLine(pen, new Point(this.pos.X, 0), new Point(this.pos.X, this.ActualHeight - this.BottomMargin + 2));
         dc.DrawLine(pen, new Point(0, this.pos.Y), new Point(this.ActualWidth, this.pos.Y));
 
         dc.Pop();

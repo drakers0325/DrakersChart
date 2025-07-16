@@ -1,4 +1,5 @@
-﻿using DrakersChart.Axis;
+﻿using System.Windows.Media.Animation;
+using DrakersChart.Axis;
 using SkiaSharp;
 
 namespace DrakersChart.Series;
@@ -17,13 +18,57 @@ public class CandleStickSeries : IChartSeries
         Style = SKPaintStyle.Fill
     };
     
+    private readonly SKPaint bullLinePaint = new()
+    {
+        Color = new SKColor(231, 25, 9),
+        IsAntialias = false,
+        Style = SKPaintStyle.Stroke
+    };
+    private readonly SKPaint bearLinePaint = new()
+    {
+        Color = new SKColor(17, 91, 203),
+        IsAntialias = false,
+        Style = SKPaintStyle.Stroke
+    };
+    
     private readonly List<CandleData> dataList = [];
     private readonly Dictionary<Int64, CandleData> dataDic = new();
 
     public Double Min { get; private set; }
     public Double Max { get; private set; }
 
+    public Single TopMarginRatio => 0.1f;
+    public Single BottomMarginRatio => 0.05f;
+
     public ChartPane? Owner { get; set; } = null;
+
+    public Range GetAxisYRange(Int64[] xAxisValues)
+    {
+        if (this.dataDic.Values.Count == 0)
+        {
+            return new Range(0, 0);
+        }
+
+        var first = this.dataDic[xAxisValues[0]];
+        Double min = first.LowPrice;
+        Double max = first.HighPrice;
+
+        for (Int32 index = 1; index < xAxisValues.Length; index++)
+        {
+            var eachData = this.dataDic[xAxisValues[index]];
+            if (min > eachData.LowPrice)
+            {
+                min = eachData.LowPrice;
+            }
+
+            if (max < eachData.HighPrice)
+            {
+                max = eachData.HighPrice;
+            }
+        }
+        
+        return new Range(min, max);
+    }
 
     public void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions)
     {
@@ -41,27 +86,49 @@ public class CandleStickSeries : IChartSeries
         Single bodyTopY = (Single)yScale.ConvertToTarget(bodyTop);
         Double bodyBottomY = yScale.ConvertToTarget(bodyBottom);
         Single bodyWidth = (Int32)(xRegion.Width * 0.8f);
+        if ((Int32)bodyWidth % 2 == 1)
+        {
+            bodyWidth -= 1;
+        }
+        
         if (bodyWidth < 1)
         {
             bodyWidth = 1;
         }
+
         Single bodyHeight = (Single)(bodyBottomY - bodyTopY);
         if (bodyHeight < 1)
         {
             bodyHeight = 1;
         }
-
-        Single center = xRegion.Center;
-        Single bodyLeft = center - (bodyWidth / 2);
-
+        
+        Single bodyLeft = (Int32)(xRegion.Center - (bodyWidth / 2)) + 0.5f;
+        if (bodyLeft < xRegion.Left)
+        {
+            bodyLeft += 1;
+        }
+        Single center = (bodyLeft + bodyLeft + bodyWidth) / 2;
+        
         Single lineTopY = (Single)yScale.ConvertToTarget(data.HighPrice);
         Single lineBottomY = (Single)yScale.ConvertToTarget(data.LowPrice);
-        Single lineLeft = center - 0.5f;
         
         var paint = data.ClosePrice > data.OpenPrice ? this.bullPaint : this.bearPaint;
-        
-        canvas.DrawRect(bodyLeft, bodyTopY, bodyWidth, bodyHeight, paint);
-        canvas.DrawLine(lineLeft, lineTopY, lineLeft, lineBottomY, paint);
+        var linePaint = data.ClosePrice > data.OpenPrice ? this.bullLinePaint : this.bearLinePaint;
+
+        if (Math.Abs(data.OpenPrice - data.ClosePrice) > 0)
+        {
+            canvas.DrawRect(bodyLeft, bodyTopY, bodyWidth, bodyHeight, linePaint);
+            canvas.DrawRect(bodyLeft, bodyTopY, bodyWidth, bodyHeight, paint);
+        }
+        else
+        {
+            canvas.DrawLine(bodyLeft, bodyTopY, bodyLeft + bodyWidth, bodyTopY, linePaint);
+        }
+
+        if (Math.Abs(data.HighPrice - data.LowPrice) > 0)
+        {
+            canvas.DrawLine(center, lineTopY, center, lineBottomY, linePaint);
+        }
     }
 
     public Int64[] GetAxisXValues()

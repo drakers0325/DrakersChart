@@ -2,10 +2,19 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using DrakersChart.Axis;
+using SkiaSharp;
 
 namespace DrakersChart;
 public sealed class Chart : UserControl
 {
+    internal static readonly SKPaint BorderPaint = new()
+    {
+        Color = new SKColor(149, 149, 149),
+        IsAntialias = false,
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1
+    };
+    
     private readonly Grid mainGrid = new();
     private readonly Canvas canvas = new();
     private readonly List<ChartPane> chartList = [];
@@ -15,6 +24,19 @@ public sealed class Chart : UserControl
 
     internal AxisXDataManger AxisXDataManager { get; } = new();
     internal AxisXDrawRegionManager AxisXDrawRegionManager { get; }
+    internal AxisXGridManager AxisXGridManager { get; }
+
+    public Int32 LeftMargin
+    {
+        get => this.AxisXDrawRegionManager.LeftMargin;
+        set => this.AxisXDrawRegionManager.LeftMargin = value;
+    }
+
+    public Int32 RightMargin
+    {
+        get => this.AxisXDrawRegionManager.RightMargin;
+        set => this.AxisXDrawRegionManager.RightMargin = value;
+    }
 
     public ChartPane[] ChartPanes => this.chartList.ToArray();
 
@@ -22,6 +44,7 @@ public sealed class Chart : UserControl
     {
         this.gripLayer = new SizeGripLayer(this, this.crosshairLayer);
         this.AxisXDrawRegionManager = new AxisXDrawRegionManager(this, this.AxisXDataManager);
+        this.AxisXGridManager = new AxisXGridManager(this.AxisXDrawRegionManager);
         AddChild(this.mainGrid);
         this.mainGrid.Children.Add(this.canvas);
         this.mainGrid.Children.Add(this.crosshairLayer);
@@ -42,7 +65,6 @@ public sealed class Chart : UserControl
 
         SetChartPaneHeight(availableSize.Height);
         this.AxisXDrawRegionManager.Width = availableSize.Width;
-        this.AxisXDrawRegionManager.Height = availableSize.Height;
         this.gripLayer.UpdateGripArea();
         return base.MeasureOverride(availableSize);
     }
@@ -73,7 +95,7 @@ public sealed class Chart : UserControl
         {
             this.chartList[index].Height = (Int32)(totalHeight * this.ratioList[index]);
             Canvas.SetTop(this.chartList[index], sumHeight);
-            sumHeight += this.chartList[index].Height;
+            sumHeight += this.chartList[index].Height - 1;
         }
 
         Canvas.SetTop(this.chartList[^1], sumHeight);
@@ -138,6 +160,7 @@ public sealed class Chart : UserControl
         }
         else
         {
+            this.chartList[^1].UseAxisXGuide = false;
             Double totalRatio = this.ratioList.Sum();
             Double avg = totalRatio / this.ratioList.Count;
             Double ratio = totalRatio / (totalRatio + avg);
@@ -149,18 +172,38 @@ public sealed class Chart : UserControl
 
             this.ratioList.Add(1 - this.ratioList.Sum());
         }
-
+        
         Canvas.SetLeft(newChart, 0);
         Canvas.SetTop(newChart, 0);
         this.chartList.Add(newChart);
         this.canvas.Children.Add(newChart);
+        this.crosshairLayer.BottomMargin = this.chartList[^1].XAxisGuideHeight;
         return newChart;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
         var pos = e.GetPosition(this.crosshairLayer);
-        this.crosshairLayer.UpdatePosition(pos);
+        Boolean isOnAxisGuide = false;
+        if (this.chartList.Count > 0)
+        {
+            isOnAxisGuide = this.chartList.Any(c => c.IsHoverOnAxisGuide());
+        }
+
+        foreach (var eachPane in this.chartList)
+        {
+            eachPane.UpdateMousePosition();
+        }
+
+        if (isOnAxisGuide)
+        {
+            this.crosshairLayer.HideCrosshair();
+        }
+        else
+        {
+            this.crosshairLayer.UpdatePosition(pos);
+        }
+
         this.gripLayer.UpdatePosition(pos);
         base.OnMouseMove(e);
     }
@@ -169,6 +212,10 @@ public sealed class Chart : UserControl
     {
         this.crosshairLayer.HideCrosshair();
         this.gripLayer.CancelSizeGrip();
+        foreach (var eachPane in this.chartList)
+        {
+            eachPane.UpdateMouseLeave();
+        }
         base.OnMouseLeave(e);
     }
 

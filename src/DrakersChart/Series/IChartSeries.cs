@@ -6,7 +6,8 @@ public interface IChartSeries
 {
     Single TopMarginRatio { get; }
     Single BottomMarginRatio { get; }
-    
+    AxisYGuideLocation AxisYGuideLocation { get; }
+
     void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions);
     Int64[] GetAxisXValues();
     Range GetAxisYRange(Int64[] xAxisValues);

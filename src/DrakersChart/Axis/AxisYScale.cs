@@ -16,4 +16,15 @@ public class AxisYScale
         Double t = (value - this.SourceMin) / (this.SourceMax - this.SourceMin); 
         return this.TargetMin + t * (this.TargetMax - this.TargetMin);
     }
+
+    public Double ConvertToSource(Double value)
+    {
+        if (Math.Abs(this.TargetMax - this.TargetMin) < 0)
+        {
+            throw new ApplicationException($"TargetMax와 TargetMin이 같으면 변환할 수 없습니다. (min:{this.TargetMin}, max:{this.TargetMax}), value:{value}");
+        }
+        
+        Double t = (value - this.TargetMin) / (this.TargetMax - this.TargetMin); 
+        return this.SourceMin + t * (this.SourceMax - this.SourceMin);
+    }
 }

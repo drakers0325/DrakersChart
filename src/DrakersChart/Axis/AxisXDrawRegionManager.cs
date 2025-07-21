@@ -2,7 +2,6 @@
 public class AxisXDrawRegionManager
 {
     private readonly EventSet eventSet = new();
-    private readonly Chart chart;
     private readonly AxisXDataManger dataManager;
     private readonly List<AxisXDrawRegion> drawRegionList = [];
 
@@ -42,27 +41,35 @@ public class AxisXDrawRegionManager
         }
     }
 
-    private Int32 leftAxisYGuideWidth = 0;
+    private Int32 leftAxisYGuideWidth;
 
     public Int32 LeftAxisYGuideWidth
     {
         get => this.leftAxisYGuideWidth;
         set
         {
+            Double prev = this.leftAxisYGuideWidth;
             this.leftAxisYGuideWidth = value;
-            SetDrawRegion();
+            if (Math.Abs(prev - this.leftAxisYGuideWidth) > 0)
+            {
+                SetDrawRegion();
+            }
         }
     }
 
-    private Int32 rightAxisYGuideWidth = 0;
+    private Int32 rightAxisYGuideWidth;
 
     public Int32 RightAxisYGuideWidth
     {
         get => this.rightAxisYGuideWidth;
         set
         {
+            Double prev = this.rightAxisYGuideWidth;
             this.rightAxisYGuideWidth = value;
-            SetDrawRegion();
+            if (Math.Abs(prev - this.rightAxisYGuideWidth) > 0)
+            {
+                SetDrawRegion();
+            }
         }
     }
 
@@ -73,16 +80,19 @@ public class AxisXDrawRegionManager
         get => this.width;
         set
         {
+            Double prev = this.width;
             this.width = value;
-            SetDrawRegion();
+            if (Math.Abs(prev - this.width) > 0)
+            {
+                SetDrawRegion();
+            }
         }
     }
 
     public AxisXDrawRegion[] DrawRegions => this.drawRegionList.ToArray();
 
-    public AxisXDrawRegionManager(Chart chart, AxisXDataManger dataManager)
+    public AxisXDrawRegionManager(AxisXDataManger dataManager)
     {
-        this.chart = chart;
         this.dataManager = dataManager;
         this.dataManager.DataUpdated += (_, _) => { SetDrawRegion(); };
     }

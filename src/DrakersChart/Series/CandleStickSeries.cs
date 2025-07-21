@@ -1,5 +1,4 @@
-﻿using System.Windows.Media.Animation;
-using DrakersChart.Axis;
+﻿using DrakersChart.Axis;
 using SkiaSharp;
 
 namespace DrakersChart.Series;
@@ -39,6 +38,8 @@ public class CandleStickSeries : IChartSeries
 
     public Single TopMarginRatio => 0.1f;
     public Single BottomMarginRatio => 0.05f;
+
+    public AxisYGuideLocation AxisYGuideLocation { get; set; } = AxisYGuideLocation.Right;
 
     public ChartPane? Owner { get; set; } = null;
 
@@ -102,7 +103,7 @@ public class CandleStickSeries : IChartSeries
             bodyHeight = 1;
         }
         
-        Single bodyLeft = (Int32)(xRegion.Center - (bodyWidth / 2)) + 0.5f;
+        Single bodyLeft = (Int32)(xRegion.Center - bodyWidth / 2) + 0.5f;
         if (bodyLeft < xRegion.Left)
         {
             bodyLeft += 1;

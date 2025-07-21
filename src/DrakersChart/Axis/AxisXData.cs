@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace DrakersChart.Axis;
+﻿namespace DrakersChart.Axis;
 public class AxisXData
 {
     private String labelFormat = String.Empty;

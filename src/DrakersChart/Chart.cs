@@ -14,7 +14,7 @@ public sealed class Chart : UserControl
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 1
     };
-    
+
     private readonly Grid mainGrid = new();
     private readonly Canvas canvas = new();
     private readonly List<ChartPane> chartList = [];
@@ -40,10 +40,44 @@ public sealed class Chart : UserControl
 
     public ChartPane[] ChartPanes => this.chartList.ToArray();
 
+    private Boolean useLeftAxisYGuide;
+
+    public Boolean UseLeftAxisYGuide
+    {
+        get => this.useLeftAxisYGuide;
+        set
+        {
+            this.useLeftAxisYGuide = value;
+            foreach (var eachPane in this.chartList)
+            {
+                eachPane.UseLeftAxisYGuide = this.useLeftAxisYGuide;
+            }
+            UpdateDrawRegion();
+        }
+    }
+
+    private Boolean useRightAxisYGuide;
+
+    public Boolean UseRightAxisYGuide
+    {
+        get => this.useRightAxisYGuide;
+        set
+        {
+            this.useRightAxisYGuide = value;
+            foreach (var eachPane in this.chartList)
+            {
+                eachPane.UseRightAxisYGuide = this.useRightAxisYGuide;
+            }
+            UpdateDrawRegion();
+        }
+    }
+
+    public Boolean IsHoverOnAxisGuide { get; private set; }
+
     public Chart()
     {
         this.gripLayer = new SizeGripLayer(this, this.crosshairLayer);
-        this.AxisXDrawRegionManager = new AxisXDrawRegionManager(this, this.AxisXDataManager);
+        this.AxisXDrawRegionManager = new AxisXDrawRegionManager(this.AxisXDataManager);
         this.AxisXGridManager = new AxisXGridManager(this.AxisXDrawRegionManager);
         AddChild(this.mainGrid);
         this.mainGrid.Children.Add(this.canvas);
@@ -54,6 +88,29 @@ public sealed class Chart : UserControl
     public void SetDisplayRange(Int32 startIndex, Int32 count)
     {
         this.AxisXDrawRegionManager.SetDisplayRange(startIndex, count);
+    }
+
+    public void UpdateDrawRegion()
+    {
+        this.AxisXDrawRegionManager.Width = this.ActualWidth;
+        if (this.chartList.Count == 0)
+        {
+            return;
+        }
+
+        Int32 leftWidth = this.chartList.Max(c => c.LeftAxisYGuideWidth);
+        Int32 rightWidth = this.chartList.Max(c => c.RightAxisGuideWidth);
+        this.AxisXDrawRegionManager.LeftAxisYGuideWidth = leftWidth;
+        this.AxisXDrawRegionManager.RightAxisYGuideWidth = rightWidth;
+        UpdateCrosshairMargin();
+
+        Boolean useLeft = this.chartList.Any(c => c.UseLeftAxisYGuide);
+        Boolean useRight = this.chartList.Any(c => c.UseRightAxisYGuide);
+        foreach (var eachPane in this.chartList)
+        {
+            eachPane.UseLeftAxisYGuide = useLeft;
+            eachPane.UseRightAxisYGuide = useRight;
+        }
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -125,12 +182,12 @@ public sealed class Chart : UserControl
         {
             return;
         }
-        
+
         if (this.chartList.Count != ratios.Length)
         {
             throw new ApplicationException("비율의 수는 ChartPane의 수와 같아야 합니다");
         }
-        
+
         Double total = 0;
         for (Int32 index = 0; index < ratios.Length - 1; index++)
         {
@@ -141,7 +198,7 @@ public sealed class Chart : UserControl
         {
             throw new ApplicationException("전체 비율이 1 이상 입니다");
         }
-        
+
         this.ratioList.Clear();
         this.ratioList.AddRange(ratios);
         if (!Double.IsNaN(this.Height))
@@ -172,30 +229,37 @@ public sealed class Chart : UserControl
 
             this.ratioList.Add(1 - this.ratioList.Sum());
         }
-        
+
         Canvas.SetLeft(newChart, 0);
         Canvas.SetTop(newChart, 0);
         this.chartList.Add(newChart);
         this.canvas.Children.Add(newChart);
-        this.crosshairLayer.BottomMargin = this.chartList[^1].XAxisGuideHeight;
+        UpdateCrosshairMargin();
         return newChart;
+    }
+
+    private void UpdateCrosshairMargin()
+    {
+        this.crosshairLayer.BottomMargin = this.chartList[^1].XAxisGuideHeight;
+        this.crosshairLayer.LeftMargin = this.AxisXDrawRegionManager.LeftAxisYGuideWidth;
+        this.crosshairLayer.RightMargin = this.AxisXDrawRegionManager.RightAxisYGuideWidth;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
         var pos = e.GetPosition(this.crosshairLayer);
-        Boolean isOnAxisGuide = false;
-        if (this.chartList.Count > 0)
-        {
-            isOnAxisGuide = this.chartList.Any(c => c.IsHoverOnAxisGuide());
-        }
-
+        
         foreach (var eachPane in this.chartList)
         {
             eachPane.UpdateMousePosition();
         }
+        
+        if (this.chartList.Count > 0)
+        {
+            this.IsHoverOnAxisGuide = this.chartList.Any(c => c.IsMouseHoverOnAxis);
+        }
 
-        if (isOnAxisGuide)
+        if (this.IsHoverOnAxisGuide)
         {
             this.crosshairLayer.HideCrosshair();
         }
@@ -216,6 +280,7 @@ public sealed class Chart : UserControl
         {
             eachPane.UpdateMouseLeave();
         }
+
         base.OnMouseLeave(e);
     }
 
@@ -235,6 +300,7 @@ public sealed class Chart : UserControl
         {
             this.gripLayer.LeftMouseUp();
         }
+
         base.OnMouseUp(e);
     }
 }

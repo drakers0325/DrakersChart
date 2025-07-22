@@ -2,7 +2,7 @@
 using SkiaSharp;
 
 namespace DrakersChart.Series;
-public class CandleStickSeries : IChartSeries
+public class CandleStickSeries : IChartSeries<CandleData>
 {
     private readonly SKPaint bullPaint = new()
     {
@@ -32,9 +32,6 @@ public class CandleStickSeries : IChartSeries
     
     private readonly List<CandleData> dataList = [];
     private readonly Dictionary<Int64, CandleData> dataDic = new();
-
-    public Double Min { get; private set; }
-    public Double Max { get; private set; }
 
     public Single TopMarginRatio => 0.1f;
     public Single BottomMarginRatio => 0.05f;
@@ -147,8 +144,6 @@ public class CandleStickSeries : IChartSeries
         this.dataList.AddRange(this.dataDic.Values.OrderBy(v => v.DateTime));
         this.dataList.Sort((a, b) => a.DateTime.CompareTo(b.DateTime));
         SetDataLink();
-        this.Min = this.dataList.Min(v => v.LowPrice);
-        this.Max = this.dataList.Max(v => v.HighPrice);
         
         this.Owner?.OwnerChart.AxisXDataManager.AddData(data.Select(v => v.DateTime.ToBinary()).ToArray());
         this.Owner?.RefreshChart();
@@ -161,6 +156,7 @@ public class CandleStickSeries : IChartSeries
         {
             this.dataList[index].PreviousData = prev;
             prev.NextData = this.dataList[index];
+            prev = this.dataList[index];
         }
     }
 }

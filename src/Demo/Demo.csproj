@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DrakersChart\DrakersChart.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="data.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\data.txt" />
+    <EmbeddedResource Include="Resources\data.txt" />
+  </ItemGroup>
+
+</Project>

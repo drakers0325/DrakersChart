@@ -16,9 +16,9 @@ public class LineSeries : IChartSeries<SeriesData>
     private readonly SKPaint linePaint = new()
     {
         Color = SKColors.Black,
-        IsAntialias = false,
+        IsAntialias = true,
         Style = SKPaintStyle.Stroke,
-        StrokeWidth = 1
+        StrokeWidth = 1,
     };
 
     public SKColor LineColor

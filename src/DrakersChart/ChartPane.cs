@@ -384,7 +384,7 @@ public class ChartPane : SKGLElement
             .Select(s => s.GetAxisYRange(axisXValues))
             .ToArray();
         Double min = ranges.Min(r => r.Min);
-        Double max = ranges.Min(r => r.Max);
+        Double max = ranges.Max(r => r.Max);
         Double diff = max - min;
         yScale.SourceMin = min - diff * bottomMarginRatio;
         yScale.SourceMax = max + diff * topMarginRatio;

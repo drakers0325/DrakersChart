@@ -1,4 +1,5 @@
 ﻿using DrakersChart.Axis;
+using DrakersChart.Legend;
 using SkiaSharp;
 
 namespace DrakersChart.Series;
@@ -7,6 +8,30 @@ public class LineSeries : IChartSeries<SeriesData>
     private readonly List<SeriesData> dataList = [];
     private readonly Dictionary<Int64, SeriesData> dataDic = new();
 
+    public String SeriesName { get; set; } = String.Empty;
+
+    public SKColor SeriesColor
+    {
+        get => this.linePaint.Color;
+        set => this.linePaint.Color = value;
+    }
+
+    private Boolean isVisible = true;
+
+    public Boolean IsVisible
+    {
+        get => this.isVisible;
+        set
+        {
+            Boolean prev = this.isVisible;
+            this.isVisible = value;
+
+            if (prev != this.isVisible)
+            {
+                this.Owner?.RefreshChart();
+            }
+        }
+    }
     public Single TopMarginRatio => 0.05f;
     public Single BottomMarginRatio => 0.05f;
     public AxisYGuideLocation AxisYGuideLocation { get; set; } = AxisYGuideLocation.Right;
@@ -21,12 +46,6 @@ public class LineSeries : IChartSeries<SeriesData>
         StrokeWidth = 1,
     };
 
-    public SKColor LineColor
-    {
-        get => this.linePaint.Color;
-        set => this.linePaint.Color = value;
-    }
-
     public Single LineThickness
     {
         get => this.linePaint.StrokeWidth;
@@ -35,6 +54,11 @@ public class LineSeries : IChartSeries<SeriesData>
 
     public void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions)
     {
+        if (!this.isVisible)
+        {
+            return;
+        }
+        
         for (Int32 index = 0; index < drawRegions.Length - 1; index++)
         {
             var eachRegion = drawRegions[index];
@@ -114,6 +138,11 @@ public class LineSeries : IChartSeries<SeriesData>
         }
 
         return new Range(min, max);
+    }
+
+    public SeriesLegendInfo[] GetSeriesLegendInfo()
+    {
+        return [new SeriesLegendInfo(this.SeriesName, this.SeriesColor)];
     }
 
     public void AddData(SeriesData[] data)

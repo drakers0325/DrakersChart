@@ -35,7 +35,7 @@ public class AxisYGuideView
 
     private readonly SKPaint guidePaint = new()
     {
-        Color = SKColors.Orange,
+        Color = new SKColor(255, 223, 144),
         IsAntialias = false,
         Style = SKPaintStyle.Fill,
         StrokeWidth = 1

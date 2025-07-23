@@ -359,6 +359,7 @@ public sealed class Chart : UserControl
         }
 
         this.gripLayer.UpdatePosition(pos);
+        this.Cursor = this.gripLayer.IsInGripArea ? Cursors.SizeNS : Cursors.Arrow;
         base.OnMouseMove(e);
     }
 
@@ -366,6 +367,7 @@ public sealed class Chart : UserControl
     {
         this.crosshairLayer.HideCrosshair();
         this.gripLayer.CancelSizeGrip();
+        this.Cursor = Cursors.Arrow;
         foreach (var eachPane in this.chartList)
         {
             eachPane.UpdateMouseLeave();

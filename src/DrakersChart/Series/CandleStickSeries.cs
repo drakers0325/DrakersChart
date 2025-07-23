@@ -1,4 +1,5 @@
 ﻿using DrakersChart.Axis;
+using DrakersChart.Legend;
 using SkiaSharp;
 
 namespace DrakersChart.Series;
@@ -33,6 +34,24 @@ public class CandleStickSeries : IChartSeries<CandleData>
     private readonly List<CandleData> dataList = [];
     private readonly Dictionary<Int64, CandleData> dataDic = new();
 
+    public String SeriesName { get; set; } = String.Empty;
+    public SKColor SeriesColor { get; set; } = SKColors.Black;
+    private Boolean isVisible = true;
+
+    public Boolean IsVisible
+    {
+        get => this.isVisible;
+        set
+        {
+            Boolean prev = this.isVisible;
+            this.isVisible = value;
+
+            if (prev != this.isVisible)
+            {
+                this.Owner?.RefreshChart();
+            }
+        }
+    }
     public Single TopMarginRatio => 0.1f;
     public Single BottomMarginRatio => 0.05f;
 
@@ -68,8 +87,18 @@ public class CandleStickSeries : IChartSeries<CandleData>
         return new Range(min, max);
     }
 
+    public SeriesLegendInfo[] GetSeriesLegendInfo()
+    {
+        return [new SeriesLegendInfo(this.SeriesName, this.SeriesColor)];
+    }
+
     public void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions)
     {
+        if (!this.isVisible)
+        {
+            return;
+        }
+        
         foreach (var eachRegion in drawRegions)
         {
             var data = this.dataDic[eachRegion.X];

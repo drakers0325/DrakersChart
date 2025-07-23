@@ -1,5 +1,8 @@
-﻿using System.Windows.Input;
+﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using DrakersChart.Axis;
+using DrakersChart.Legend;
 using DrakersChart.Series;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
@@ -7,8 +10,9 @@ using SkiaSharp.Views.WPF;
 using Size = System.Windows.Size;
 
 namespace DrakersChart;
-public class ChartPane : SKGLElement
+public class ChartPane : Canvas
 {
+    private readonly SKGLElement drawElement = new();
     private readonly DateTimeAxisXGuideView axisXGuideView;
     private readonly AxisYGuideView leftYGuideView;
     private readonly AxisYGridManager leftYGridManager;
@@ -17,6 +21,8 @@ public class ChartPane : SKGLElement
     private readonly AxisYGridManager rightYGridManager;
     private readonly AxisYScale rightYScale = new();
     private readonly List<IChartSeries> seriesList = [];
+    private readonly List<SeriesLegend> legendList = [];
+
     private AxisXDrawRegion? currentXRegion;
     private SKBitmap staticLayer = new();
 
@@ -42,7 +48,10 @@ public class ChartPane : SKGLElement
         };
         this.rightYGridManager = new AxisYGridManager(this.rightYScale);
         this.OwnerChart = owner;
-        this.PaintSurface += OnPaintSurface;
+        this.drawElement.PaintSurface += OnPaintSurface;
+        this.Children.Add(this.drawElement);
+
+        this.Loaded += (_, _) => { SetLegendPosition(); };
     }
 
     public void AddSeries(IChartSeries series)
@@ -64,14 +73,46 @@ public class ChartPane : SKGLElement
             }
         }
 
+        series.Owner = this;
         this.OwnerChart.UpdateDrawRegion();
+        AddSeriesLegend(series);
         RefreshChart();
+    }
+
+    private void AddSeriesLegend(IChartSeries series)
+    {
+        var legend = new SeriesLegend(series) { Margin = new Thickness(2) };
+        this.legendList.Add(legend);
+        SetLegendPosition();
+        this.Children.Add(legend);
+    }
+
+    private void SetLegendPosition()
+    {
+        Double leftStart = this.UseLeftAxisYGuide ? this.LeftAxisYGuideWidth : 0;
+        Double left = leftStart;
+        Double top = 0;
+        foreach (var eachLegend in this.legendList)
+        {
+            var size = eachLegend.DesiredSize;
+            Double tempX = left + size.Width;
+            if (tempX > this.ActualWidth - (this.UseRightAxisYGuide ? this.RightAxisGuideWidth : 0))
+            {
+                top = size.Height;
+                left = leftStart;
+            }
+
+            SetLeft(eachLegend, left);
+            SetTop(eachLegend, top);
+            left += size.Width;
+        }
     }
 
     public void RefreshChart()
     {
         this.reDrawAll = true;
         InvalidateVisual();
+        this.drawElement.InvalidateVisual();
     }
 
     public void UpdateMousePosition()
@@ -101,6 +142,7 @@ public class ChartPane : SKGLElement
         if (updateVisual)
         {
             InvalidateVisual();
+            this.drawElement.InvalidateVisual();
         }
     }
 
@@ -109,12 +151,15 @@ public class ChartPane : SKGLElement
         this.currentXRegion = null;
         this.IsMouseHoverOnAxis = false;
         this.IsMouseHoverOnChartPane = false;
-        InvalidateVisual();
+        this.drawElement.InvalidateVisual();
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
         this.reDrawAll = true;
+        this.drawElement.Width = availableSize.Width;
+        this.drawElement.Height = availableSize.Height;
+        SetLegendPosition();
         return base.MeasureOverride(availableSize);
     }
 

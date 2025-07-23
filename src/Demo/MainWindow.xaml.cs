@@ -59,6 +59,7 @@ public partial class MainWindow : Window
     {
         var series = new CandleStickSeries()
         {
+            SeriesName = "캔들",
             AxisYGuideLocation = AxisYGuideLocation.Right,
         };
         series.AddData(candleData);
@@ -70,6 +71,7 @@ public partial class MainWindow : Window
     {
         var series = new BarSeries()
         {
+            SeriesName = "거래량",
             AxisYGuideLocation = AxisYGuideLocation.Right,
         };
         var data = candleData.Select(v => new SeriesData(v.DateTime.ToBinary()) { Value = v.Volume }).ToArray();
@@ -85,21 +87,42 @@ public partial class MainWindow : Window
         var sma120 = CreateSMA(candleData, 120);
         var sma240 = CreateSMA(candleData, 240);
 
-        AddLineSeries(0, sma20, SKColors.Aqua);
-        AddLineSeries(0, sma60, SKColors.Orange);
-        AddLineSeries(0, sma120, SKColors.Green);
-        AddLineSeries(0, sma240, SKColors.Black);
+        var group = new SeriesGroup
+        {
+            SeriesName = "SMA",
+        };
+        group.AddSeries(CreateLineSeries(sma20, SKColors.Aqua, "20"));
+        group.AddSeries(CreateLineSeries(sma60, SKColors.Orange, "60"));
+        group.AddSeries(CreateLineSeries(sma120, SKColors.Green, "120"));
+        group.AddSeries(CreateLineSeries(sma240, SKColors.Black, "240"));
+        
+        this.demoChart.ChartPanes[0].AddSeries(group);
     }
 
     private void AddOBV(CandleData[] candleData)
     {
         var obv = CreateOBV(candleData);
-        AddLineSeries(2, obv, SKColors.DarkSlateBlue);
+        AddLineSeries(2, obv, "OBV", SKColors.DarkSlateBlue);
     }
 
-    private void AddLineSeries(Int32 chartPaneIndex, SeriesData[] data, SKColor color)
+    private static LineSeries CreateLineSeries(SeriesData[] data, SKColor color, String name)
     {
-        var series = new LineSeries() { LineColor = color };
+        var series = new LineSeries
+        {
+            SeriesName = name,
+            SeriesColor = color
+        };
+        series.AddData(data);
+        return series;
+    }
+
+    private void AddLineSeries(Int32 chartPaneIndex, SeriesData[] data, String name, SKColor color)
+    {
+        var series = new LineSeries
+        {
+            SeriesName = name,
+            SeriesColor = color
+        };
         series.AddData(data);
 
         this.demoChart.ChartPanes[chartPaneIndex].AddSeries(series);
@@ -155,7 +178,7 @@ public partial class MainWindow : Window
                 Math.Abs(eachData.ClosePrice - prev.OpenPrice) < 0 ? 0 : -eachData.Volume;
             sum += addVolume;
             obvList[index].Value = sum;
-            
+
             prev = eachData;
         }
 

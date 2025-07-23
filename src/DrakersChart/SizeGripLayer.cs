@@ -50,6 +50,7 @@ internal class SizeGripLayer : Canvas
         this.Background = Brushes.Transparent;
         this.SnapsToDevicePixels = true;
         this.UseLayoutRounding = true;
+        this.IsHitTestVisible = false;
         RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
     }
 

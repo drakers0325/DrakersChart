@@ -51,7 +51,7 @@ public partial class MainWindow : Window
         AddBarChart(candleData);
         AddOBV(candleData);
 
-        this.demoChart.SetChartPaneHeightRatio([0.5, 0.25, 0.25]);
+        this.demoChart.SetChartPaneHeightRatio([0.7, 0.15, 0.15]);
         this.demoChart.SetDisplayRange(candleData.Length - 240, 240);
     }
 

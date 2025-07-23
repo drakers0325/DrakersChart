@@ -1,6 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using DrakersChart.Axis;
 using SkiaSharp;
 
@@ -21,6 +23,9 @@ public sealed class Chart : UserControl
     private readonly List<Double> ratioList = [];
     private readonly CrosshairLayer crosshairLayer = new();
     private readonly SizeGripLayer gripLayer;
+    private readonly Border chartBorder = new();
+    private readonly ScrollBar axisXScrollBar = new();
+    private readonly Slider displayCountSlider = new();
 
     internal AxisXDataManger AxisXDataManager { get; } = new();
     internal AxisXDrawRegionManager AxisXDrawRegionManager { get; }
@@ -52,6 +57,7 @@ public sealed class Chart : UserControl
             {
                 eachPane.UseLeftAxisYGuide = this.useLeftAxisYGuide;
             }
+
             UpdateDrawRegion();
         }
     }
@@ -68,6 +74,7 @@ public sealed class Chart : UserControl
             {
                 eachPane.UseRightAxisYGuide = this.useRightAxisYGuide;
             }
+
             UpdateDrawRegion();
         }
     }
@@ -79,15 +86,95 @@ public sealed class Chart : UserControl
         this.gripLayer = new SizeGripLayer(this, this.crosshairLayer);
         this.AxisXDrawRegionManager = new AxisXDrawRegionManager(this.AxisXDataManager);
         this.AxisXGridManager = new AxisXGridManager(this.AxisXDrawRegionManager);
+        this.AxisXDataManager.DataUpdated += AxisXDataUpdated;
+        
+        InitializeMainGrid();
+    }
+
+    private void AxisXDataUpdated(Object? sender, EventArgs e)
+    {
+        Int32 largeChange = this.AxisXDataManager.DataCount / 100;
+        this.displayCountSlider.Minimum = 1;
+        this.displayCountSlider.Maximum = this.AxisXDataManager.DataCount;
+        this.displayCountSlider.SmallChange = 1;
+        this.displayCountSlider.TickFrequency = 1;
+        this.displayCountSlider.IsSnapToTickEnabled = true;
+        this.displayCountSlider.Focusable = false;
+        this.displayCountSlider.LargeChange = largeChange;
+
+        this.axisXScrollBar.Maximum = this.AxisXDataManager.DataCount - this.displayCountSlider.Value;
+        this.axisXScrollBar.SmallChange = 1;
+        this.axisXScrollBar.LargeChange = largeChange;
+    }
+
+    private void InitializeMainGrid()
+    {
         AddChild(this.mainGrid);
         this.mainGrid.Children.Add(this.canvas);
         this.mainGrid.Children.Add(this.crosshairLayer);
         this.mainGrid.Children.Add(this.gripLayer);
+        
+        this.chartBorder.BorderThickness = new Thickness(1);
+        this.chartBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 149, 149, 149));
+        this.mainGrid.Children.Add(this.chartBorder);
+
+        InitializeScroll();
     }
+
+    private void InitializeScroll()
+    {
+        this.axisXScrollBar.VerticalAlignment = VerticalAlignment.Bottom;
+        this.axisXScrollBar.HorizontalAlignment = HorizontalAlignment.Left;
+        this.axisXScrollBar.Orientation = Orientation.Horizontal;
+        this.axisXScrollBar.Height = 18;
+        this.axisXScrollBar.Margin = new Thickness(1, 0, 0, 1);
+
+        this.mainGrid.Children.Add(this.axisXScrollBar);
+
+        this.displayCountSlider.VerticalAlignment = VerticalAlignment.Bottom;
+        this.displayCountSlider.HorizontalAlignment = HorizontalAlignment.Right;
+        this.displayCountSlider.Orientation = Orientation.Horizontal;
+        this.displayCountSlider.Width = 100;
+        this.displayCountSlider.Margin = new Thickness(0, 0, 0, 1);
+
+        this.mainGrid.Children.Add(this.displayCountSlider);
+        
+        this.axisXScrollBar.ValueChanged += AxisXScrollBarOnValueChanged;
+        this.displayCountSlider.ValueChanged += DisplayCountSliderOnValueChanged;
+    }
+
+    #region Scroll
+    
+    private void AxisXScrollBarOnValueChanged(Object sender, RoutedPropertyChangedEventArgs<Double> e)
+    {
+        SetDisplayRange((Int32)this.axisXScrollBar.Value, (Int32)this.displayCountSlider.Value);
+    }
+    
+    private void DisplayCountSliderOnValueChanged(Object sender, RoutedPropertyChangedEventArgs<Double> e)
+    {
+        this.axisXScrollBar.Maximum = this.AxisXDataManager.DataCount - (Int32)this.displayCountSlider.Value;
+        this.axisXScrollBar.Value = this.AxisXDataManager.DataCount - (Int32)this.displayCountSlider.Value;
+        
+        SetDisplayRange((Int32)this.axisXScrollBar.Value, (Int32)this.displayCountSlider.Value);
+    }
+
+    #endregion
+
 
     public void SetDisplayRange(Int32 startIndex, Int32 count)
     {
         this.AxisXDrawRegionManager.SetDisplayRange(startIndex, count);
+        this.axisXScrollBar.Value = startIndex;
+        this.displayCountSlider.Value = count;
+        RefreshChart();
+    }
+
+    private void RefreshChart()
+    {
+        foreach (var eachPane in this.chartList)
+        {
+            eachPane.RefreshChart();
+        }
     }
 
     public void UpdateDrawRegion()
@@ -120,7 +207,8 @@ public sealed class Chart : UserControl
             eachChart.Width = availableSize.Width;
         }
 
-        SetChartPaneHeight(availableSize.Height);
+        SetChartPaneHeight(availableSize.Height - this.axisXScrollBar.Height - 1);
+        this.axisXScrollBar.Width = availableSize.Width - 100;
         this.AxisXDrawRegionManager.Width = availableSize.Width;
         this.gripLayer.UpdateGripArea();
         return base.MeasureOverride(availableSize);
@@ -240,7 +328,7 @@ public sealed class Chart : UserControl
 
     private void UpdateCrosshairMargin()
     {
-        this.crosshairLayer.BottomMargin = this.chartList[^1].XAxisGuideHeight;
+        this.crosshairLayer.BottomMargin = this.chartList[^1].XAxisGuideHeight + (Int32)this.axisXScrollBar.Height;
         this.crosshairLayer.LeftMargin = this.AxisXDrawRegionManager.LeftAxisYGuideWidth;
         this.crosshairLayer.RightMargin = this.AxisXDrawRegionManager.RightAxisYGuideWidth;
     }
@@ -248,18 +336,20 @@ public sealed class Chart : UserControl
     protected override void OnMouseMove(MouseEventArgs e)
     {
         var pos = e.GetPosition(this.crosshairLayer);
-        
+
         foreach (var eachPane in this.chartList)
         {
             eachPane.UpdateMousePosition();
         }
-        
+
         if (this.chartList.Count > 0)
         {
             this.IsHoverOnAxisGuide = this.chartList.Any(c => c.IsMouseHoverOnAxis);
         }
 
-        if (this.IsHoverOnAxisGuide)
+        Boolean isHoverOnChartPane = this.chartList.Any(eachPane => eachPane.IsMouseHoverOnChartPane);
+
+        if (this.IsHoverOnAxisGuide || !isHoverOnChartPane)
         {
             this.crosshairLayer.HideCrosshair();
         }

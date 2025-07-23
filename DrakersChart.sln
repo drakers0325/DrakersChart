@@ -5,8 +5,6 @@ VisualStudioVersion = 17.14.36221.1 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrakersChart", "src\DrakersChart\DrakersChart.csproj", "{EE830271-9C0B-46B1-B10C-B94DB1D043CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUI", "src\TestUI\TestUI.csproj", "{76725CE7-0525-4430-9302-DC5F8C4EC595}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrakersChart.Tests", "src\DrakersChart.Tests\DrakersChart.Tests.csproj", "{F64C9D03-06DD-4D16-90A5-734C559FDEFC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "src\Demo\Demo.csproj", "{AFF78DF6-93F1-472D-96A7-866952B612FF}"
@@ -21,10 +19,6 @@ Global
 		{EE830271-9C0B-46B1-B10C-B94DB1D043CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE830271-9C0B-46B1-B10C-B94DB1D043CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE830271-9C0B-46B1-B10C-B94DB1D043CF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{76725CE7-0525-4430-9302-DC5F8C4EC595}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{76725CE7-0525-4430-9302-DC5F8C4EC595}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{76725CE7-0525-4430-9302-DC5F8C4EC595}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{76725CE7-0525-4430-9302-DC5F8C4EC595}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F64C9D03-06DD-4D16-90A5-734C559FDEFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F64C9D03-06DD-4D16-90A5-734C559FDEFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F64C9D03-06DD-4D16-90A5-734C559FDEFC}.Release|Any CPU.ActiveCfg = Release|Any CPU

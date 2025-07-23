@@ -302,7 +302,7 @@ public class ChartPane : SKGLElement
             this.axisXGuideView.DrawCurrentGuideValue(canvas, this.currentXRegion.Value, (Single)pos.X, topY, this.staticLayer.Width);
         }
 
-        if (this.IsMouseHoverOnChartPane)
+        if (this.IsMouseHoverOnChartPane && !this.IsMouseHoverOnAxis)
         {
             var pos = Mouse.GetPosition(this);
             if (this.UseLeftAxisYGuide)

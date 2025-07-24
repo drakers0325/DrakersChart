@@ -40,7 +40,7 @@ public class SeriesLegend : CheckBox
         var run = new Run
         {
             Text = title + " ",
-            Foreground = new SolidColorBrush(Color.FromArgb(color.Alpha, color.Red, color.Green, color.Blue)),
+            Foreground = new SolidColorBrush(color.ToColor()),
         };
         
         this.title.Inlines.Add(run);

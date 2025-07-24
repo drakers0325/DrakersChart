@@ -1,6 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using DrakersChart.Axis;
 using DrakersChart.Legend;
 using DrakersChart.Series;
@@ -13,6 +15,7 @@ namespace DrakersChart;
 public class ChartPane : Canvas
 {
     private readonly SKGLElement drawElement = new();
+    private readonly ToolTip toolTip = new();
     private readonly DateTimeAxisXGuideView axisXGuideView;
     private readonly AxisYGuideView leftYGuideView;
     private readonly AxisYGridManager leftYGridManager;
@@ -123,6 +126,7 @@ public class ChartPane : Canvas
         this.IsMouseHoverOnAxis = IsHoverOnAxisGuide();
         this.IsMouseHoverOnChartPane = pos.X >= 0 && pos.X <= this.ActualWidth &&
                                        pos.Y >= 0 && pos.Y <= this.ActualHeight;
+        CheckMouseHoverOnSeries(pos);
 
         Boolean updateVisual = false;
         if (this.useAxisXGuide)
@@ -144,6 +148,73 @@ public class ChartPane : Canvas
             InvalidateVisual();
             this.drawElement.InvalidateVisual();
         }
+    }
+
+    private void CheckMouseHoverOnSeries(Point pos)
+    {
+        if (this.IsMouseHoverOnChartPane && !this.IsMouseHoverOnAxis)
+        {
+            Single x = (Single)pos.X;
+            Single y = (Single)pos.Y;
+            foreach (var eachSeries in this.seriesList)
+            {
+                if (!eachSeries.IsMouseHover(x, y, out Int64 xValue))
+                {
+                    continue;
+                }
+
+                var hintInfos = this.seriesList.Select(s => s.GetHintInfo(xValue)).ToArray();
+                CreateHintContent(hintInfos);
+                this.toolTip.IsOpen = true;
+                return;
+            }
+        }
+
+        this.toolTip.IsOpen = false;
+    }
+
+    private void CreateHintContent(HintInfo[] infos)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Vertical };
+
+        foreach (var eachInfo in infos)
+        {
+            panel.Children.Add(new TextBlock()
+            {
+                Text = eachInfo.SeriesName,
+                Foreground = new SolidColorBrush(eachInfo.Color.ToColor()),
+            });
+
+            foreach (var eachValue in eachInfo.Values)
+            {
+                var tb = new TextBlock();
+                var nameRun = new Run
+                {
+                    Text = "    " + eachValue.Name,
+                    Foreground = new SolidColorBrush(eachValue.Color.ToColor())
+                };
+
+                var splitRun = new Run
+                {
+                    Text = " : ",
+                    Foreground = new SolidColorBrush(Colors.Black)
+                };
+
+                var valueRun = new Run
+                {
+                    Text = eachValue.Value == null ? "" : eachValue.Value.Value.ToString("F2"),
+                    Foreground = new SolidColorBrush(Colors.Black)
+                };
+                
+                tb.Inlines.Add(nameRun);
+                tb.Inlines.Add(splitRun);
+                tb.Inlines.Add(valueRun);
+                
+                panel.Children.Add(tb);
+            }
+        }
+
+        this.toolTip.Content = panel;
     }
 
     public void UpdateMouseLeave()

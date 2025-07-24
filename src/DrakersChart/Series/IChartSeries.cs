@@ -17,6 +17,9 @@ public interface IChartSeries
     Int64[] GetAxisXValues();
     Range GetAxisYRange(Int64[] xAxisValues);
     SeriesLegendInfo[] GetSeriesLegendInfo();
+
+    Boolean IsMouseHover(Single x, Single y, out Int64 xValue);
+    HintInfo GetHintInfo(Int64 xValue);
 }
 
 public interface IChartSeries<in T> : IChartSeries

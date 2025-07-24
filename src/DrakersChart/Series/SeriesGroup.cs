@@ -86,6 +86,26 @@ public class SeriesGroup : IChartSeries
         var legend2 = this.seriesList.Select(s => new SeriesLegendInfo(s.SeriesName, s.SeriesColor)).ToArray();
         return legend1.Concat(legend2).ToArray();
     }
+    
+    public Boolean IsMouseHover(Single x, Single y, out Int64 xValue)
+    {
+        foreach (var eachSeries in this.seriesList)
+        {
+            if (eachSeries.IsMouseHover(x, y, out xValue))
+            {
+                return true;
+            }
+        }
+
+        xValue = -1;
+        return false;
+    }
+
+    public HintInfo GetHintInfo(Int64 xValue)
+    {
+        var values = this.seriesList.SelectMany(s => s.GetHintInfo(xValue).Values).ToArray();
+        return new HintInfo(this.SeriesName, this.SeriesColor, values);
+    }
 
     public void AddSeries(IChartSeries series)
     {

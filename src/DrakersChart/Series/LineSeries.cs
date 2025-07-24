@@ -7,6 +7,7 @@ public class LineSeries : IChartSeries<SeriesData>
 {
     private readonly List<SeriesData> dataList = [];
     private readonly Dictionary<Int64, SeriesData> dataDic = new();
+    private readonly Dictionary<SKPath, Int64> pathDic = new();
 
     public String SeriesName { get; set; } = String.Empty;
 
@@ -32,6 +33,7 @@ public class LineSeries : IChartSeries<SeriesData>
             }
         }
     }
+
     public Single TopMarginRatio => 0.05f;
     public Single BottomMarginRatio => 0.05f;
     public AxisYGuideLocation AxisYGuideLocation { get; set; } = AxisYGuideLocation.Right;
@@ -54,11 +56,12 @@ public class LineSeries : IChartSeries<SeriesData>
 
     public void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions)
     {
+        this.pathDic.Clear();
         if (!this.isVisible)
         {
             return;
         }
-        
+
         for (Int32 index = 0; index < drawRegions.Length - 1; index++)
         {
             var eachRegion = drawRegions[index];
@@ -75,11 +78,14 @@ public class LineSeries : IChartSeries<SeriesData>
             return;
         }
 
+        var path = new SKPath();
+
         if (data.PreviousData == null && data.NextData == null)
         {
             Single y = (Int32)yScale.ConvertToTarget(data.Value.Value) + 0.5f;
             Single x = (Int32)region.Center + 0.5f;
             canvas.DrawCircle(new SKPoint(x, y), 2, this.linePaint);
+            path.AddCircle(x, y, 2);
         }
         else if (data.NextData is { Value: not null })
         {
@@ -94,7 +100,10 @@ public class LineSeries : IChartSeries<SeriesData>
             Single y2 = (Int32)yScale.ConvertToTarget(data.NextData.Value.Value) + 0.5f;
 
             canvas.DrawLine(x1, y1, x2, y2, this.linePaint);
+            path.AddRect(new SKRect(x1 - 0.5f, y1 - 0.5f, x2 + 0.5f, y2 + 0.5f));
         }
+
+        this.pathDic.Add(path, data.Index);
     }
 
     public Int64[] GetAxisXValues()
@@ -113,7 +122,7 @@ public class LineSeries : IChartSeries<SeriesData>
             .Where(x => x != null)
             .Select(x => x.Value)
             .ToArray();
-        
+
         if (values.Length == 0)
         {
             return new Range(0, 0);
@@ -143,6 +152,29 @@ public class LineSeries : IChartSeries<SeriesData>
     public SeriesLegendInfo[] GetSeriesLegendInfo()
     {
         return [new SeriesLegendInfo(this.SeriesName, this.SeriesColor)];
+    }
+
+    public Boolean IsMouseHover(Single x, Single y, out Int64 xValue)
+    {
+        foreach (var eachPair in this.pathDic.Where(eachPair => eachPair.Key.Contains(x, y)))
+        {
+            xValue = eachPair.Value;
+            return true;
+        }
+
+        xValue = -1;
+        return false;
+    }
+
+    public HintInfo GetHintInfo(Int64 xValue)
+    {
+        if (!this.dataDic.TryGetValue(xValue, out var data))
+        {
+            return new HintInfo(this.SeriesName, this.SeriesColor);
+        }
+
+        var values = new[] { new HintValue(this.SeriesName, data.Value, this.SeriesColor) };
+        return new HintInfo(this.SeriesName, this.SeriesColor, values);
     }
 
     public void AddData(SeriesData[] data)

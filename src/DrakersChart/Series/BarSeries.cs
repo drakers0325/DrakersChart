@@ -7,6 +7,7 @@ public class BarSeries : IChartSeries<SeriesData>
 {
     private readonly List<SeriesData> dataList = [];
     private readonly Dictionary<Int64, SeriesData> dataDic = new();
+    private readonly Dictionary<SKPath, Int64> pathDic = new();
     
     public String SeriesName { get; set; } = String.Empty;
     public SKColor SeriesColor { get; set; } = SKColors.Black;
@@ -36,6 +37,7 @@ public class BarSeries : IChartSeries<SeriesData>
 
     public void Draw(SKCanvas canvas, AxisYScale yScale, AxisXDrawRegion[] drawRegions)
     {
+        this.pathDic.Clear();
         if (!this.isVisible)
         {
             return;
@@ -93,6 +95,10 @@ public class BarSeries : IChartSeries<SeriesData>
         {
             canvas.DrawLine(bodyLeft, bodyTopY, bodyLeft + bodyWidth, bodyTopY, paint.line);
         }
+        
+        var path = new SKPath();
+        path.AddRect(new SKRect(bodyLeft - 0.5f, bodyTopY - 0.5f, bodyLeft + bodyWidth + 0.5f, bodyTopY + bodyHeight + 0.5f));
+        this.pathDic.Add(path, data.Index);
     }
 
     public Int64[] GetAxisXValues()
@@ -141,6 +147,32 @@ public class BarSeries : IChartSeries<SeriesData>
     public SeriesLegendInfo[] GetSeriesLegendInfo()
     {
         return [new SeriesLegendInfo(this.SeriesName, this.SeriesColor)];
+    }
+    
+    public Boolean IsMouseHover(Single x, Single y, out Int64 xValue)
+    {
+        foreach (var eachPair in this.pathDic.Where(eachPair => eachPair.Key.Contains(x, y)))
+        {
+            xValue = eachPair.Value;
+            return true;
+        }
+
+        xValue = -1;
+        return false;
+    }
+
+    public HintInfo GetHintInfo(Int64 xValue)
+    {
+        if (!this.dataDic.TryGetValue(xValue, out var data))
+        {
+            return new HintInfo(this.SeriesName, this.SeriesColor);
+        }
+
+        var values = new []
+        {
+            new HintValue(this.SeriesName, data.Value, this.SeriesColor)
+        };
+        return new HintInfo(this.SeriesName, this.SeriesColor, values);
     }
 
     public void AddData(SeriesData[] data)

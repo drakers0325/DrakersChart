@@ -207,7 +207,7 @@ public sealed class Chart : UserControl
             eachChart.Width = availableSize.Width;
         }
 
-        SetChartPaneHeight(availableSize.Height - this.axisXScrollBar.Height - 1);
+        SetChartPaneHeight(availableSize.Height - this.axisXScrollBar.ActualHeight - 1);
         this.axisXScrollBar.Width = availableSize.Width - 100;
         this.AxisXDrawRegionManager.Width = availableSize.Width;
         this.gripLayer.UpdateGripArea();
@@ -220,6 +220,11 @@ public sealed class Chart : UserControl
     /// <param name="totalHeight">전체 Height</param>
     private void SetChartPaneHeight(Double totalHeight)
     {
+        if (totalHeight <= 0)
+        {
+            return;
+        }
+        
         if (this.chartList.Count > 0 && this.ratioList.Count == 0)
         {
             this.ratioList.Clear();
@@ -289,9 +294,9 @@ public sealed class Chart : UserControl
 
         this.ratioList.Clear();
         this.ratioList.AddRange(ratios);
-        if (!Double.IsNaN(this.Height))
+        if (!Double.IsNaN(this.ActualHeight))
         {
-            SetChartPaneHeight(this.Height);
+            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.ActualHeight - 1);
         }
     }
 
@@ -322,6 +327,13 @@ public sealed class Chart : UserControl
         Canvas.SetTop(newChart, 0);
         this.chartList.Add(newChart);
         this.canvas.Children.Add(newChart);
+        newChart.Width = this.ActualWidth;
+        
+        if (!Double.IsNaN(this.ActualHeight))
+        {
+            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.ActualHeight - 1);
+        }
+        
         UpdateCrosshairMargin();
         return newChart;
     }

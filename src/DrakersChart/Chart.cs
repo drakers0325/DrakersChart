@@ -207,7 +207,7 @@ public sealed class Chart : UserControl
             eachChart.Width = availableSize.Width;
         }
 
-        SetChartPaneHeight(availableSize.Height - this.axisXScrollBar.ActualHeight - 1);
+        SetChartPaneHeight(availableSize.Height - this.axisXScrollBar.Height - 1);
         this.axisXScrollBar.Width = availableSize.Width - 100;
         this.AxisXDrawRegionManager.Width = availableSize.Width;
         this.gripLayer.UpdateGripArea();
@@ -296,7 +296,7 @@ public sealed class Chart : UserControl
         this.ratioList.AddRange(ratios);
         if (!Double.IsNaN(this.ActualHeight))
         {
-            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.ActualHeight - 1);
+            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.Height - 1);
         }
     }
 
@@ -331,7 +331,7 @@ public sealed class Chart : UserControl
         
         if (!Double.IsNaN(this.ActualHeight))
         {
-            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.ActualHeight - 1);
+            SetChartPaneHeight(this.ActualHeight - this.axisXScrollBar.Height - 1);
         }
         
         UpdateCrosshairMargin();
